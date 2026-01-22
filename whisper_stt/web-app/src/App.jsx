@@ -23,9 +23,12 @@ function App() {
     formData.append("file", selectedFile);
 
     try {
-      // Use relative path for Vercel deployment (mapped in vercel.json)
-      // Note: For local dev, you might need a vite proxy or keep localhost if running separately
-      const apiUrl = import.meta.env.PROD ? "/api/speech-to-text/" : "http://127.0.0.1:8000/speech-to-text/";
+      // 1. If VITE_API_URL is set (Render/External), use that.
+      // 2. If PROD (Vercel), use relative /api path.
+      // 3. Else Localhost.
+      const baseUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/api" : "http://127.0.0.1:8000");
+      const cleanBase = baseUrl.replace(/\/$/, "");
+      const apiUrl = `${cleanBase}/speech-to-text/`;
 
       const response = await fetch(apiUrl, {
         method: "POST",
@@ -51,7 +54,9 @@ function App() {
 
     setIsAnalyzing(true);
     try {
-      const apiUrl = import.meta.env.PROD ? "/api/analyze/" : "http://127.0.0.1:8000/analyze/";
+      const baseUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "/api" : "http://127.0.0.1:8000");
+      const cleanBase = baseUrl.replace(/\/$/, "");
+      const apiUrl = `${cleanBase}/analyze/`;
 
       const response = await fetch(apiUrl, {
         method: "POST",
