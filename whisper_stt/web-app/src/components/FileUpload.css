@@ -1,0 +1,59 @@
+.upload-card {
+    padding: 3rem;
+    text-align: center;
+    border: 2px dashed rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    background: white;
+    /* Solid white for better contract */
+}
+
+.upload-card.drag-active {
+    border-color: var(--primary);
+    background: rgba(59, 130, 246, 0.05);
+    /* Very subtle green/blue */
+}
+
+.file-input {
+    display: none;
+}
+
+.icon-container {
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.upload-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.upload-card:hover .icon-container {
+    transform: translateY(-5px);
+}
+
+.upload-content h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.file-types {
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+    color: var(--text-muted);
+}
+
+.drag-file-element {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}

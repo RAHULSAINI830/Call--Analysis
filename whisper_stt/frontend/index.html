@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Call Transcription Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: #020617;
+            padding: 30px;
+            border-radius: 10px;
+            width: 450px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        input {
+            margin: 15px 0;
+        }
+
+        button {
+            background: #3b82f6;
+            border: none;
+            padding: 10px 20px;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        .output {
+            margin-top: 20px;
+            background: #020617;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+            border: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🎙 Call Transcription Tool</h2>
+
+    <input type="file" id="audioFile" accept="audio/*" /> <br>
+
+    <button onclick="uploadAudio()">Upload & Transcribe</button>
+
+    <div class="output" id="output">
+        Transcription will appear here...
+    </div>
+</div>
+
+<script>
+    async function uploadAudio() {
+        const fileInput = document.getElementById("audioFile");
+        const output = document.getElementById("output");
+
+        if (!fileInput.files.length) {
+            alert("Please select an audio file");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+
+        output.innerHTML = "⏳ Processing audio...";
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/speech-to-text/", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+            output.innerHTML = data.transcription;
+
+        } catch (err) {
+            output.innerHTML = "❌ Error processing audio";
+            console.error(err);
+        }
+    }
+</script>
+
+</body>
+</html>
