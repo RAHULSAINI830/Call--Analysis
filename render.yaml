@@ -10,9 +10,9 @@ services:
       - key: HF_TOKEN
         sync: false # You must add this in the Render Dashboard
 
+staticSites:
   # React Frontend Static Site
-  - type: static
-    name: clara-ai-frontend
+  - name: clara-ai-frontend
     buildCommand: cd whisper_stt/web-app && npm install && npm run build
     publishDir: whisper_stt/web-app/dist
     routes:
