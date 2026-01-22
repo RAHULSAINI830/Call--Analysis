@@ -1,10 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import whisper
 import os
-import httpx
 from dotenv import load_dotenv
+from huggingface_hub import InferenceClient
 
 load_dotenv()
 
@@ -19,11 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------- Load Whisper Model ----------------
-print("Loading Whisper model...")
-model = whisper.load_model("base")
-print("Whisper model loaded successfully!")
-
 # ---------------- Setup Upload Folder ----------------
 # Vercel only allows writing to /tmp
 UPLOAD_DIR = "/tmp"
@@ -33,31 +27,56 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 class AnalysisRequest(BaseModel):
     text: str
 
+# ---------------- Constants ----------------
+# Using a powerful Whisper model available via HF Inference API
+# openai/whisper-large-v3-turbo is a good choice for speed/accuracy/size
+ASR_MODEL = "openai/whisper-large-v3-turbo" 
+
 # ---------------- API Endpoints ----------------
 @app.post("/speech-to-text/")
 async def speech_to_text(file: UploadFile = File(...)):
+    hf_token = os.getenv("HF_TOKEN")
+    if not hf_token:
+         raise HTTPException(status_code=500, detail="HF_TOKEN not configured")
+
     file_path = f"{UPLOAD_DIR}/{file.filename}"
 
+    # Save file temporarily (Vercel needs file on disk or bytes in memory)
     with open(file_path, "wb") as f:
         f.write(await file.read())
 
-    print("Transcribing:", file.filename)
+    print(f"Transcribing: {file.filename} via HF API")
 
-    result = model.transcribe(file_path)
+    client = InferenceClient(token=hf_token)
 
-    return {
-        "filename": file.filename,
-        "transcription": result["text"]
-    }
+    try:
+        # Perform ASR using Hugging Face API
+        # automatic_speech_recognition returns an object with 'text' attribute
+        result = client.automatic_speech_recognition(file_path, model=ASR_MODEL)
+        
+        # Cleanup temp file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        return {
+            "filename": file.filename,
+            "transcription": result.text 
+        }
+
+    except Exception as e:
+        print(f"Error calling HF API: {e}")
+        # Cleanup on error too
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/analyze/")
 async def analyze_call(request: AnalysisRequest):
     hf_token = os.getenv("HF_TOKEN")
     if not hf_token:
-         raise HTTPException(status_code=500, detail="HF_TOKEN not configured in backend")
+         raise HTTPException(status_code=500, detail="HF_TOKEN not configured")
 
     # Initialize Client
-    from huggingface_hub import InferenceClient
     client = InferenceClient(token=hf_token)
     
     messages = [
@@ -101,7 +120,7 @@ async def analyze_call(request: AnalysisRequest):
         response = client.chat_completion(
             messages=messages, 
             model="Qwen/Qwen2.5-7B-Instruct", 
-            max_tokens=500,
+            max_tokens=600,
             temperature=0.1
         )
         
